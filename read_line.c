@@ -2,7 +2,7 @@
 
 /**
  * read_line - Reads a line from standard input.
- *
+ * Return: A pointer to the dynamically allocated string.
  */
 char *read_line(void)
 {
