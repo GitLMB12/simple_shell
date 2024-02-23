@@ -3,32 +3,42 @@
 /**
  * main - entry point
  * @ac: arg count
- * @argv: arg vector
+ * @av: arg vector
  *
  * Return: 0 on success, 1 on error
  */
-int main(int ac, char **argv)
+int main(int ac, char **av)
 {
-	char *line = NULL;
-	char **command = NULL;
-	int status = 0;
+	info_t info[] = { INFO_INIT };
+	int fd = 2;
 
-	(void) ac;
+	asm ("mov %1, %0\n\t"
+		"add $3, %0"
+		: "=r" (fd)
+		: "r" (fd));
 
-	while (1)
+	if (ac == 2)
 	{
-		line = read_line();
-		if (line == NULL)
+		fd = open(av[1], O_RDONLY);
+		if (fd == -1)
 		{
-			if (isatty(STDIN_FILENO))
+			if (errno == EACCES)
+				exit(126);
+			if (errno == ENOENT)
 			{
-				write(STDOUT_FILENO, "\n", 1);
+				_eputs(av[0]);
+				_eputs(": 0: Can't open ");
+				_eputs(av[1]);
+				_eputchar('\n');
+				_eputchar(BUF_FLUSH);
+				exit(127);
 			}
-			return (status);
+			return (EXIT_FAILURE);
 		}
-		command = tokenizer(line);
-		if (!command)
-			continue;
-		status = my_execute(command, argv);
+		info->readfd = fd;
 	}
+	populate_env_list(info);
+	read_history(info);
+	hsh(info, av);
+	return (EXIT_SUCCESS);
 }
